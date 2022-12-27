@@ -39,10 +39,10 @@ class TaskListViewController: UITableViewController {
     }
     
     @objc private func addNewTask() {
-        showAlert(title: "New Task", message: "Please add new task")
+        showAddingAlert(title: "New Task", message: "Please add new task")
     }
     
-    private func showAlert(title: String, message: String) {
+    private func showAddingAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
@@ -66,17 +66,17 @@ class TaskListViewController: UITableViewController {
         taskList.append(task)
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
-        
         StorageManager.shared.saveContext()
     }
     
-    ///////////
-    private func showEditingAlert(title: String, message: String, text: String) {
+    private func showEditingAlert(title: String, message: String, task: Task) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
-            guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
-            self?.save(task)
+            guard let editedTask = alert.textFields?.first?.text, !editedTask.isEmpty else { return }
+            task.title = editedTask
+            self?.tableView.reloadData()
+            StorageManager.shared.saveContext()
         }
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
@@ -84,15 +84,10 @@ class TaskListViewController: UITableViewController {
         alert.addAction(saveAction)
         alert.addAction(cancelAction)
         alert.addTextField { textField in
-            textField.text = text
+            textField.text = task.title
         }
         present(alert, animated: true)
     }
-    
-    
-    
-    
-    
     
     private func fetchTaskList() {
         taskList = StorageManager.shared.fetchData(for: Task.fetchRequest())
@@ -118,6 +113,7 @@ extension TaskListViewController {
         if editingStyle == .delete {
             let task = taskList[indexPath.row]
             viewContext.delete(task)
+            
             taskList.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
             
@@ -126,8 +122,7 @@ extension TaskListViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedTask = taskList[indexPath.row]
-        showEditingAlert(title: "Update Task", message: "sdfvd", text: selectedTask.title ?? "")
+        let task = taskList[indexPath.row]
+        showEditingAlert(title: "Update Task", message: "What do you want to do?", task: task)
     }
-   
 }
